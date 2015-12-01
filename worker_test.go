@@ -42,7 +42,7 @@ func TestConsumeAllTheProduced(t *testing.T) {
 	fmt.Println(stat)
 }
 
-func Testプロデューサーが失敗してもちゃんと終わること(t *testing.T) {
+func TestInTheCaseSomeProducersFailed(t *testing.T) {
 	ps := ConsProducers(
 		SleepAndFail(50),
 		SleepAndReturnN(1, 30),
