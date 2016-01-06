@@ -54,10 +54,10 @@ consume:0
 	if !strings.HasPrefix(out.String(), expected) {
 		t.Fatalf("bad order of result\nexpected(%v) but got(%v)", out.String(), expected)
 	}
-	if stat.success != 3 {
+	if stat.Success != 3 {
 		t.Fatalf("task should success(%v)", stat)
 	}
-	if stat.totalTime > 80*time.Duration(time.Millisecond) {
+	if stat.TotalTime > 80*time.Duration(time.Millisecond) {
 		t.Fatalf("sleep 50msec and 30msec should be concurrent(%v)", stat)
 	}
 }
@@ -82,10 +82,10 @@ produce error (after sleep 50 msec)
 	if !strings.HasPrefix(out.String(), expected) {
 		t.Fail()
 	}
-	if stat.success != 2 {
+	if stat.Success != 2 {
 		t.Fatalf("one task should fail(%v)", stat)
 	}
-	if stat.totalTime > 80*time.Duration(time.Millisecond) {
+	if stat.TotalTime > 80*time.Duration(time.Millisecond) {
 		t.Fatalf("sleep 50msec and 30msec should be concurrent(%v)", stat)
 	}
 }

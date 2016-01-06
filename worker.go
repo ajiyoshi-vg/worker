@@ -17,12 +17,14 @@ type Item struct {
 	err error
 }
 type Result struct {
-	success     int
-	failure     int
-	produceTime []time.Duration
-	consumeTime []time.Duration
-	blockTime   []time.Duration
-	totalTime   time.Duration
+	Success      int
+	Failure      int
+	ProduceTime  []time.Duration
+	ConsumeTime  []time.Duration
+	BlockTime    []time.Duration
+	TotalTime    time.Duration
+	TotalProduce time.Duration
+	TotalConsume time.Duration
 }
 
 var LogError ErrorHandler = func(err error) {
@@ -44,45 +46,48 @@ func ConsumeAll(ps []Producer, c Consumer, eh ErrorHandler) *Result {
 	start := time.Now()
 
 	for i, producer := range ps {
-		go func(p Producer, cost *time.Duration) {
+		go func(p Producer, cost *time.Duration, total *time.Duration) {
 			from := time.Now()
 			val, err := p()
 			ch <- Item{val, err}
 			*cost = time.Now().Sub(from)
-		}(producer, &result.produceTime[i])
+			*total = time.Now().Sub(start)
+		}(producer, &result.ProduceTime[i], &result.TotalProduce)
 	}
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
+		consumeStart := time.Now()
 		for i := 0; i < num; i++ {
 			blockFrom := time.Now()
 			v := <-ch
-			result.blockTime[i] = time.Now().Sub(blockFrom)
+			result.BlockTime[i] = time.Now().Sub(blockFrom)
 
 			from := time.Now()
 			if v.err != nil {
-				result.failure++
+				result.Failure++
 				eh(v.err)
 			} else {
-				result.success++
+				result.Success++
 				c(v.val)
 			}
-			result.consumeTime[i] = time.Now().Sub(from)
+			result.ConsumeTime[i] = time.Now().Sub(from)
+			result.TotalConsume = time.Now().Sub(consumeStart)
 		}
 		wg.Done()
 	}()
 
 	wg.Wait()
-	result.totalTime = time.Now().Sub(start)
+	result.TotalTime = time.Now().Sub(start)
 	return result
 }
 
 func NewResult(n int) *Result {
 	return &Result{
-		produceTime: make([]time.Duration, n),
-		consumeTime: make([]time.Duration, n),
-		blockTime:   make([]time.Duration, n),
+		ProduceTime: make([]time.Duration, n),
+		ConsumeTime: make([]time.Duration, n),
+		BlockTime:   make([]time.Duration, n),
 	}
 }
 
@@ -91,16 +96,20 @@ func (stat Result) String() string {
 	"success":%v,
 	"failure":%v,
 	"totalTime":"%v",
+	"totalProduce":"%v",
+	"totalConsume":"%v",
 	"blockTimes":[%v],
 	"produceTimes":[%v],
 	"consumeTimes":[%v]
 }`
 	return fmt.Sprintf(format,
-		stat.success, stat.failure,
-		stat.totalTime,
-		jsonTimes(stat.blockTime),
-		jsonTimes(stat.produceTime),
-		jsonTimes(stat.consumeTime),
+		stat.Success, stat.Failure,
+		stat.TotalTime,
+		stat.TotalProduce,
+		stat.TotalConsume,
+		jsonTimes(stat.BlockTime),
+		jsonTimes(stat.ProduceTime),
+		jsonTimes(stat.ConsumeTime),
 	)
 }
 
