@@ -24,7 +24,6 @@ type Result struct {
 	BlockTime    []time.Duration
 	TotalTime    time.Duration
 	TotalProduce time.Duration
-	TotalConsume time.Duration
 }
 
 var LogError ErrorHandler = func(err error) {
@@ -58,7 +57,6 @@ func ConsumeAll(ps []Producer, c Consumer, eh ErrorHandler) *Result {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
-		consumeStart := time.Now()
 		for i := 0; i < num; i++ {
 			blockFrom := time.Now()
 			v := <-ch
@@ -73,7 +71,6 @@ func ConsumeAll(ps []Producer, c Consumer, eh ErrorHandler) *Result {
 				c(v.val)
 			}
 			result.ConsumeTime[i] = time.Now().Sub(from)
-			result.TotalConsume = time.Now().Sub(consumeStart)
 		}
 		wg.Done()
 	}()
@@ -99,14 +96,12 @@ func (stat Result) String() string {
 	"totalProduce":"%v",
 	"totalConsume":"%v",
 	"blockTimes":[%v],
-	"produceTimes":[%v],
-	"consumeTimes":[%v]
+	"produceTimes":[%v]
 }`
 	return fmt.Sprintf(format,
 		stat.Success, stat.Failure,
 		stat.TotalTime,
 		stat.TotalProduce,
-		stat.TotalConsume,
 		jsonTimes(stat.BlockTime),
 		jsonTimes(stat.ProduceTime),
 		jsonTimes(stat.ConsumeTime),
