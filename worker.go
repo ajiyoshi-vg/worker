@@ -73,6 +73,7 @@ func ConsumeAll(ps []Producer, c Consumer, eh ErrorHandler) *Result {
 			result.ConsumeTime[i] = time.Now().Sub(from)
 		}
 		wg.Done()
+		close(ch)
 	}()
 
 	wg.Wait()
